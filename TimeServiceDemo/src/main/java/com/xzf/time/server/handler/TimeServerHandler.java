@@ -17,12 +17,14 @@ public class TimeServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteBuf buf = (ByteBuf)msg;
+       /* ByteBuf buf = (ByteBuf)msg;
         byte[] msgBytes = new byte[buf.readableBytes()];
         buf.readBytes(msgBytes);
-        String msgBody = new String(msgBytes,"UTF-8");
+        String msgBody = new String(msgBytes,"UTF-8");*/
+        String msgBody = (String)msg;
         System.out.println("The time server received data:"+msgBody);
         String currentTime = QUERY_TIME_COMMAND.equalsIgnoreCase(msgBody)? new Date().toString() : "ERROR_COMMAND";
+        currentTime = currentTime + System.getProperty("line.separator");
         ByteBuf responseData = Unpooled.copiedBuffer(currentTime.getBytes());
         //从性能角度考虑，为了防止频繁地唤醒Selector进行消息发送，Netty的write方法并不直接将消息写入
         //SocketChannel中，调用write方法只是把待发送的消息发送缓冲数组中，再通过调用flush方法,将发送缓冲区中的全部消息写到SocketChannel中。
