@@ -23,7 +23,7 @@ public class TimeServer {
     private void bind(int port) throws Exception{
         //NioEventLoopGroup是个线程组（Reactor线程组），用于网络事件的处理
         //bossGroup线程组：处理服务端接受客户端的链接
-        //workerGropu线程组：进行SocketChannel的网络读写
+        //workerGroup线程组：进行SocketChannel的网络读写
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
