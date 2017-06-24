@@ -1,0 +1,7 @@
+server:
+  port: 9999
+  name: localhost
+
+http:
+  cache:
+    seconds: 60
