@@ -164,7 +164,10 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         response.headers().set(CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
     }
 
-    private static String sanitizeUri(String uri) {
+    private  String sanitizeUri(String uri) {
+
+        uri = decodeUri(uri);
+
         if (!uri.startsWith("/")) {
             return null;
         }
@@ -174,9 +177,14 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
             return null;
         }
 
-        String resourceReletivePath = uri.substring("/get".length());
+        return DiskFileUpload.baseDirectory + uri;
+    }
 
-        return DiskFileUpload.baseDirectory + resourceReletivePath;
+    private String decodeUri(String uri){
+        String fileSuffix = uri.substring(uri.lastIndexOf("."));
+        String encodedStr = uri.substring("/get/".length(),uri.lastIndexOf("."));
+        byte[] decodeBytes = Base64.getDecoder().decode(encodedStr);
+        return new StringBuilder("/").append(new String(decodeBytes)).append(fileSuffix).toString();
     }
 
     private void setDateAndCacheHeaders(HttpResponse response, File fileToCache) {
@@ -202,7 +210,6 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         if(ServerConstants.MULTIPART_FORM_DATA.equals(contentType)){
             System.out.println("deal with file upload");
             result = processFileUpload(request);
-
         }else if(ServerConstants.APPLICATION_JSON.equals(contentType)){
             System.out.println("deal with json data");
         }
@@ -254,14 +261,25 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         throw new Exception("filed upload failed");
     }
 
-    private String buildUrl(String dir,String fileName){
+    private String buildUrl(String dir,String fileName) throws Exception{
         StringBuilder sb = new StringBuilder("http://").append(serverName)
-                .append(":").append(port).append("/get");
-        // TODO 增加Base64编码
-        String reletiveDir = dir.substring(DiskFileUpload.baseDirectory.length());
-        sb.append(reletiveDir).append("/").append(fileName);
+                                    .append(":")
+                                    .append(port)
+                                    .append("/get/");
+        sb.append(encodeFilePath(dir,fileName));
+        sb.append(fileName.substring(fileName.lastIndexOf(".")));
         return sb.toString();
     }
+
+    private String encodeFilePath(String fileDir,String fullFileName) throws Exception{
+        String reletiveFilePath = fileDir.substring(DiskFileUpload.baseDirectory.length()+1);
+        String fileName = fullFileName.substring(0,fullFileName.lastIndexOf("."));
+        StringBuilder sb = new StringBuilder();
+        sb.append(reletiveFilePath).append(fileName);
+       byte[] encodeBytes = Base64.getEncoder().encode(sb.toString().getBytes("UTF-8"));
+       return new String(encodeBytes);
+    }
+
 
     private void checkAttributeInfo(Map<String, String> attributeInfo) throws Exception{
         if(MapUtils.isEmpty(attributeInfo)){
@@ -277,7 +295,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         String userName = attrMap.get("userName");
         String fileBizType = attrMap.get("bizType");
         StringBuilder sb = new StringBuilder(DiskFileUpload.baseDirectory);
-        sb.append("/").append(userName).append("/").append(fileBizType);
+        sb.append("/").append(userName).append("/").append(fileBizType).append("/");
         return sb.toString();
     }
 
